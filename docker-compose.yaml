@@ -8,38 +8,23 @@ services:
     environment:
       POSTGRES_DB: test
       POSTGRES_PASSWORD: testtest
-    domainname: psql.local
     volumes:
       - ./tmp/.docker_data/postgres:/var/lib/postgresql/data/
-    networks:
-      - internal
-      - external
     profiles:
       - "psql"
-      - "app"
 
   api:
     build:
       context: .
-    image: api_test
-    container_name: api_test
+    image: api:latest
+    container_name: api
     expose:
       - 8000
     ports:
       - 8000:8000
     depends_on:
       - postgres
-    domainname: api.local
-    links:
-      - postgres:psql.local
-    networks:
-      - internal
-      - external
+
     profiles:
       - "app"
 
-networks:
-  internal:
-    internal: true
-  external:
-    internal: false

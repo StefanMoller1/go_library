@@ -33,21 +33,23 @@ func main() {
 		log.Panic(err, "failed to load config")
 	}
 
-	db, err := psql.Connect(conf.Database.DNS)
+	db, err := psql.Connect(conf.Database.DNS, log)
 	if err != nil {
 		log.Panic(err, "failed to connect to datastore")
 	}
 
 	defer db.Close(context.Background())
 
-	err = db.Migrate()
+	err = db.Migrate(log)
 	if err != nil {
 		log.Panic(err, "failed to migrate datastore")
 	}
+
+	host := conf.Server.Host + ":" + conf.Server.Port
 
 	routerManager := new(router.Manager)
 	routerManager.Log = log
 	routerManager.Library = repository.NewLibraryRepository(db.Conn, log)
 
-	log.Fatal(http.ListenAndServe(conf.Server.Host+":"+conf.Server.Port, routerManager.StartRouter()))
+	log.Fatal(http.ListenAndServe(host, routerManager.StartRouter(host)))
 }

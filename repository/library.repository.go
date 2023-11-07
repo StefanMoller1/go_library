@@ -32,7 +32,10 @@ func (l *LibraryRepository) SelectAll(pagination *models.Pagination) ([]*models.
 	)
 
 	s = strings.Join([]string{"SELECT COUNT(id) FROM", booksTableName}, " ")
-	l.Conn.QueryRow(context.Background(), s).Scan(&pagination.Total)
+	err = l.Conn.QueryRow(context.Background(), s).Scan(&pagination.Total)
+	if err != nil {
+		return nil, err
+	}
 
 	rows, err = l.Conn.Query(
 		context.Background(),
@@ -50,11 +53,10 @@ func (l *LibraryRepository) SelectAll(pagination *models.Pagination) ([]*models.
 	}
 
 	defer rows.Close()
-	fmt.Println(rows.RawValues())
+
 	var books []*models.Book
 
 	for rows.Next() {
-		fmt.Println("here")
 		var book models.Book
 		err = rows.Scan(
 			&book.ID,
@@ -63,12 +65,10 @@ func (l *LibraryRepository) SelectAll(pagination *models.Pagination) ([]*models.
 			&book.Author,
 			&book.Description,
 		)
-		fmt.Println("here")
+
 		if err != nil {
 			return nil, err
 		}
-
-		l.log.Printf("[INFO] selected book %#v", book)
 
 		books = append(books, &book)
 	}

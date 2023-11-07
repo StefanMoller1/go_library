@@ -57,10 +57,6 @@ func (m *Manager) selectAll(w http.ResponseWriter, r *http.Request) {
 		safe = "failed to select all books"
 		return
 	}
-
-	m.Log.Printf("[INFO] selected %#v books", pagination)
-	m.Log.Printf("[INFO] books %#v", books)
-
 }
 
 func (m *Manager) selectBook(w http.ResponseWriter, r *http.Request) {
@@ -163,7 +159,7 @@ func (m *Manager) deleteBook(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 
 		if err != nil {
-			m.Log.Printf("[ERROR] deleting all books: %v", err)
+			m.Log.Printf("[ERROR] deleting book: %v", err)
 			render.JSON(w, r, models.Response{Error: safe})
 			return
 		}

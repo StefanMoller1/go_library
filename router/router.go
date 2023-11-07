@@ -16,7 +16,7 @@ type Manager struct {
 	Library app.Library
 }
 
-func (m *Manager) StartRouter() http.Handler {
+func (m *Manager) StartRouter(host string) http.Handler {
 
 	r := chi.NewRouter()
 
@@ -37,6 +37,7 @@ func (m *Manager) StartRouter() http.Handler {
 
 	r.Mount("/api/v1", m.apiRouterV1())
 
+	m.Log.Printf("router started on port: %s\n", host)
 	return r
 }
 
