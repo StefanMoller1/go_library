@@ -1,0 +1,41 @@
+version: "3.2"
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:latest
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_DB: test
+      POSTGRES_PASSWORD: testtest
+    domainname: psql.local
+    volumes:
+      - ./tmp/.docker_data/postgres:/var/lib/postgresql/data/
+    networks:
+      - internal
+      - external
+
+  api:
+    build:
+      context: .
+    image: api_test
+    container_name: api_test
+    expose:
+      - 8000
+    ports:
+      - 8000:8000
+    depends_on:
+      - postgres
+    domainname: api.local
+    links:
+      - postgres:psql.local
+    networks:
+      - internal
+      - external
+
+networks:
+  internal:
+    driver: overlay
+    internal: true
+  external:
+    internal: false
