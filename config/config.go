@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/BurntSushi/toml"
@@ -13,6 +14,8 @@ type Config struct {
 
 func NewConfig(file, name string) (*Config, error) {
 	c := Config{}
+
+	fmt.Println(os.Getwd())
 
 	if _, err := os.Stat(file); err != nil {
 		file = "/etc/" + name + "/config.toml"

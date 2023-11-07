@@ -39,6 +39,7 @@ func (m *Manager) selectAll(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			m.Log.Printf("[ERROR] selecting all books: %v", err)
+			render.Status(r, 500)
 			render.JSON(w, r, models.Response{Error: safe})
 			return
 		}
@@ -70,6 +71,7 @@ func (m *Manager) selectBook(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			m.Log.Printf("[ERROR] selecting book: %v", err)
+			render.Status(r, 500)
 			render.JSON(w, r, models.Response{Error: safe})
 			return
 		}
@@ -96,15 +98,16 @@ func (m *Manager) createBook(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			m.Log.Printf("[ERROR] creating new books: %v", err)
+			render.Status(r, 500)
 			render.JSON(w, r, models.Response{Error: safe})
 			return
 		}
+
 		render.JSON(w, r, models.Response{Data: book})
 	}()
 
 	err = render.Bind(r, &book)
 	if err != nil {
-		m.Log.Println(err)
 		safe = "failed to parse create book request"
 		return
 	}
@@ -128,6 +131,7 @@ func (m *Manager) updateBook(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			m.Log.Printf("[ERROR] updating book: %v", err)
+			render.Status(r, 500)
 			render.JSON(w, r, models.Response{Error: safe})
 			return
 		}
@@ -160,6 +164,7 @@ func (m *Manager) deleteBook(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			m.Log.Printf("[ERROR] deleting book: %v", err)
+			render.Status(r, 500)
 			render.JSON(w, r, models.Response{Error: safe})
 			return
 		}

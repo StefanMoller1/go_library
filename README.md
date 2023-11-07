@@ -14,7 +14,13 @@ $ docker compose --profile app up -d --build
 Starting the database only and running the project locally
 ```
 $ docker compose --profile psql up -d
-$ go run cmd/main.go
+$ go run cmd/library/main.go
+```
+
+## Running tests
+
+```
+$ go test ./... -v
 ```
 
 ## Endpoints
