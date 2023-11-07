@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 	"net/http"
 
 	"github.com/StefanMoller1/go_library/config"
-	"github.com/StefanMoller1/go_library/models"
+	"github.com/StefanMoller1/go_library/pkg/psql"
+	"github.com/StefanMoller1/go_library/repository"
 	"github.com/StefanMoller1/go_library/router"
 )
 
@@ -31,15 +33,21 @@ func main() {
 		log.Panic(err, "failed to load config")
 	}
 
-	db, err := models.Connect(conf, log)
+	db, err := psql.Connect(conf.Database.DNS)
 	if err != nil {
 		log.Panic(err, "failed to connect to datastore")
 	}
+
+	defer db.Close(context.Background())
 
 	err = db.Migrate()
 	if err != nil {
 		log.Panic(err, "failed to migrate datastore")
 	}
 
-	log.Fatal(http.ListenAndServe(conf.Server.Host+":"+conf.Server.Port, router.StartRouter(db, log)))
+	routerManager := new(router.Manager)
+	routerManager.Log = log
+	routerManager.Library = repository.NewLibraryRepository(db.Conn, log)
+
+	log.Fatal(http.ListenAndServe(conf.Server.Host+":"+conf.Server.Port, routerManager.StartRouter()))
 }

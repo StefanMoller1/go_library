@@ -19,7 +19,7 @@ func (b *Book) Bind(r *http.Request) error {
 }
 
 func (m *Manager) LibraryRouter(r chi.Router) {
-	r.Get("/", m.selectAll)
+	r.With(m.Paginate).Get("/", m.selectAll)
 	r.Get("/{id}", m.selectBook)
 	r.Post("/", m.createBook)
 	r.Put("/{id}", m.updateBook)
@@ -28,27 +28,38 @@ func (m *Manager) LibraryRouter(r chi.Router) {
 
 func (m *Manager) selectAll(w http.ResponseWriter, r *http.Request) {
 	var (
-		books []*models.Book
-		safe  string
-		err   error
+		books      []*models.Book
+		pagination *models.Pagination
+		ok         bool
+		safe       string
+		err        error
 	)
 
 	defer func() {
 
 		if err != nil {
-			m.log.Printf("[ERROR] selecting all books: %v", err)
+			m.Log.Printf("[ERROR] selecting all books: %v", err)
 			render.JSON(w, r, models.Response{Error: safe})
 			return
 		}
-		render.JSON(w, r, models.Response{Data: books})
+		render.JSON(w, r, models.Response{Data: books, Pagination: pagination})
 	}()
 
-	resp := m.db.Find(&books)
-	if resp.Error != nil {
-		err = resp.Error
+	pagination, ok = r.Context().Value(paginationContext).(*models.Pagination)
+	if !ok {
+		safe = "failed to parse pagination context"
+		err = errors.New(safe)
+		return
+	}
+
+	books, err = m.Library.SelectAll(pagination)
+	if err != nil {
 		safe = "failed to select all books"
 		return
 	}
+
+	m.Log.Printf("[INFO] selected %#v books", pagination)
+	m.Log.Printf("[INFO] books %#v", books)
 
 }
 
@@ -62,7 +73,7 @@ func (m *Manager) selectBook(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 
 		if err != nil {
-			m.log.Printf("[ERROR] selecting book: %v", err)
+			m.Log.Printf("[ERROR] selecting book: %v", err)
 			render.JSON(w, r, models.Response{Error: safe})
 			return
 		}
@@ -71,9 +82,8 @@ func (m *Manager) selectBook(w http.ResponseWriter, r *http.Request) {
 
 	id := chi.URLParam(r, "id")
 
-	resp := m.db.First(&book, models.Book{ID: id})
-	if resp.Error != nil {
-		err = resp.Error
+	book, err = m.Library.Select(id)
+	if err != nil {
 		safe = "failed to select all books"
 		return
 	}
@@ -89,7 +99,7 @@ func (m *Manager) createBook(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 
 		if err != nil {
-			m.log.Printf("[ERROR] creating new books: %v", err)
+			m.Log.Printf("[ERROR] creating new books: %v", err)
 			render.JSON(w, r, models.Response{Error: safe})
 			return
 		}
@@ -98,24 +108,17 @@ func (m *Manager) createBook(w http.ResponseWriter, r *http.Request) {
 
 	err = render.Bind(r, &book)
 	if err != nil {
-		m.log.Println(err)
+		m.Log.Println(err)
 		safe = "failed to parse create book request"
 		return
 	}
 
 	book.ID = uuid.NewString()
 
-	resp := m.db.Create(&book.Book)
-	if resp.Error != nil {
-		err = resp.Error
+	err = m.Library.Create(book.Book)
+	if err != nil {
 		safe = "failed to create book"
 	}
-
-	if resp.RowsAffected == 0 {
-		safe = "failed to create book"
-		err = errors.New(safe)
-	}
-
 }
 
 func (m *Manager) updateBook(w http.ResponseWriter, r *http.Request) {
@@ -128,7 +131,7 @@ func (m *Manager) updateBook(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 
 		if err != nil {
-			m.log.Printf("[ERROR] updating book: %v", err)
+			m.Log.Printf("[ERROR] updating book: %v", err)
 			render.JSON(w, r, models.Response{Error: safe})
 			return
 		}
@@ -145,15 +148,9 @@ func (m *Manager) updateBook(w http.ResponseWriter, r *http.Request) {
 
 	book.ID = id
 
-	resp := m.db.Save(&book.Book)
-	if resp.Error != nil {
-		err = resp.Error
+	err = m.Library.Update(book.Book)
+	if err != nil {
 		safe = "failed to update book"
-	}
-
-	if resp.RowsAffected == 0 {
-		safe = "failed to update book"
-		err = errors.New(safe)
 	}
 }
 
@@ -166,7 +163,7 @@ func (m *Manager) deleteBook(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 
 		if err != nil {
-			m.log.Printf("[ERROR] deleting all books: %v", err)
+			m.Log.Printf("[ERROR] deleting all books: %v", err)
 			render.JSON(w, r, models.Response{Error: safe})
 			return
 		}
@@ -175,14 +172,8 @@ func (m *Manager) deleteBook(w http.ResponseWriter, r *http.Request) {
 
 	id := chi.URLParam(r, "id")
 
-	resp := m.db.Delete(&models.Book{ID: id})
-	if resp.Error != nil {
-		err = resp.Error
+	err = m.Library.Delete(id)
+	if err != nil {
 		safe = "failed to delete book"
-	}
-
-	if resp.RowsAffected == 0 {
-		safe = "failed to delete book"
-		err = errors.New(safe)
 	}
 }

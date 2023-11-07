@@ -5,19 +5,18 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/StefanMoller1/go_library/models"
+	"github.com/StefanMoller1/go_library/app"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 )
 
 type Manager struct {
-	db  *models.Database
-	log *log.Logger
+	Log     *log.Logger
+	Library app.Library
 }
 
-func StartRouter(db *models.Database, log *log.Logger) http.Handler {
-	m := Manager{db, log}
+func (m *Manager) StartRouter() http.Handler {
 
 	r := chi.NewRouter()
 

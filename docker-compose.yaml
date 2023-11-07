@@ -14,6 +14,9 @@ services:
     networks:
       - internal
       - external
+    profiles:
+      - "psql"
+      - "app"
 
   api:
     build:
@@ -32,10 +35,11 @@ services:
     networks:
       - internal
       - external
+    profiles:
+      - "app"
 
 networks:
   internal:
-    driver: overlay
     internal: true
   external:
     internal: false
